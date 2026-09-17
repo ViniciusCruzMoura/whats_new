@@ -1,0 +1,190 @@
+whats_new
+=========
+
+whats_new is a small web application for publishing project updates and future ideas in a simple and readable way.
+
+The project was created for teams that need a lightweight place where users, developers and stakeholders can see what changed in a project, what may be implemented next, and leave comments or replies without requiring an account.
+
+The goal is not to replace issue trackers, project management tools, GitHub Discussions or release management systems. The goal is to provide a small communication layer between a project and the people interested in its evolution.
+
+
+PURPOSE
+
+The application provides two main views:
+
+Updates
+    Changes that were already implemented in the project.
+
+Futuros
+    Ideas, planned improvements and features that may be implemented later.
+
+Entries are organized by date and use a format similar to a concise changelog or commit history.
+
+Each entry contains a type, title and description. Users can open an entry and participate in its discussion.
+
+
+COMMENTS
+
+Comments are intentionally simple.
+
+Users may comment without creating an account or logging in.
+
+Name, e-mail address and telephone number are optional. When no name is provided, the comment is published as anonymous.
+
+E-mail addresses and telephone numbers are stored only so the project administrator may contact the author when necessary. They are not displayed publicly.
+
+Comments support nested replies, including replies to replies.
+
+The administration interface allows comments and replies to be reviewed, answered and removed.
+
+
+IMPLEMENTATION
+
+whats_new uses a deliberately small technical stack:
+
+    Python
+    Flask
+    SQLite
+
+SQLite is provided by the Python standard library.
+
+Flask is the only direct external dependency required by the application.
+
+HTML, CSS, SQL queries and server-side logic are kept together in a small application instead of introducing a larger framework structure.
+
+The database is created automatically when the application starts.
+
+Application data and comments are stored in the same SQLite database.
+
+
+DESIGN
+
+The project follows a lightweight approach.
+
+The implementation intentionally prefers:
+
+    few lines of code
+    few dependencies
+    few files
+    simple SQL
+    server-side rendering
+    standard Python facilities
+    minimal JavaScript
+    minimal configuration
+
+The objective is to keep the application easy to understand, portable and inexpensive to maintain.
+
+There is no ORM, frontend framework, build system, JavaScript package manager or external database server.
+
+This also makes the project easy to adapt. The data model, HTML, CSS and application behavior can be changed directly without having to understand several framework layers or toolchains.
+
+
+DATABASE
+
+The application uses a single SQLite database named:
+
+    dados.db
+
+The main tables are:
+
+    notas
+    comentarios
+
+The notas table stores updates and future items.
+
+The comentarios table stores comments and nested replies.
+
+Replies reference another comment through parent_id, allowing an arbitrary discussion depth.
+
+SQL statements that contain user-provided data use parameterized queries instead of string concatenation.
+
+
+SECURITY
+
+Public comments do not require authentication.
+
+User-provided text is escaped before being rendered in HTML to reduce the risk of cross-site scripting.
+
+Database inserts and updates use SQLite parameter binding to reduce the risk of SQL injection.
+
+Administrative operations are protected by HTTP Basic Authentication.
+
+The default administrative password is intended only for local development and should be changed before exposing the application publicly.
+
+
+RUNNING
+
+Install the dependency:
+
+    pip install -r requirements.txt
+
+Start the application:
+
+    python app.py
+
+The application will be available at:
+
+    http://127.0.0.1:5000
+
+Main routes:
+
+    /updates
+    /futuros
+    /admin
+
+The SQLite database is created automatically on first execution.
+
+
+CONFIGURATION
+
+The application is designed to require very little configuration.
+
+The administrative password may be changed through the environment variable:
+
+    ADMIN_PASSWORD
+
+Example:
+
+    ADMIN_PASSWORD=my_password python app.py
+
+On Windows Command Prompt:
+
+    set ADMIN_PASSWORD=my_password
+    python app.py
+
+On PowerShell:
+
+    $env:ADMIN_PASSWORD="my_password"
+    python app.py
+
+
+PORTABILITY
+
+Because the project uses Python, Flask and SQLite, it can run on common Windows and Linux environments without requiring a separate database server or frontend toolchain.
+
+The small codebase is intentional.
+
+whats_new should remain easy to copy, modify, embed into another project or use as the starting point for a more specific internal tool.
+
+If a feature requires a large dependency or a substantial architectural layer, it should be evaluated against the main purpose of the project: keeping the solution small, understandable and adaptable.
+
+
+SCOPE
+
+whats_new is intended to solve a narrow problem well.
+
+It is not intended to provide:
+
+    issue tracking
+    project management
+    user accounts
+    complex permissions
+    voting systems
+    notification infrastructure
+    release automation
+    repository synchronization
+    kanban boards
+
+Those functions are better handled by dedicated tools.
+
+whats_new exists only to make project changes, future ideas and their discussions easy to publish and easy to follow.
