@@ -9,6 +9,7 @@ from flask import Flask, Response, abort, redirect, render_template_string, requ
 app = Flask(__name__)
 DB = "dados.db"
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin")
+NAMESPACE = "/novidades"
 
 
 # ---------------------------------------------------------------------------
@@ -397,22 +398,24 @@ BASE = """
 
 
 def pagina(body, title="What's New", page=""):
-    return render_template_string(BASE, body=body, title=title, page=page)
+    base = BASE.replace('href="/', f'href="{NAMESPACE}/')
+    body = body.replace('href="/', f'href="{NAMESPACE}/').replace('action="/', f'action="{NAMESPACE}/')
+    return render_template_string(base, body=body, title=title, page=page)
 
 
 # ---------------------------------------------------------------------------
 # Feed
 # ---------------------------------------------------------------------------
 
-@app.get("/")
+@app.get(NAMESPACE)
 def home():
-    return redirect("/updates")
+    return redirect(NAMESPACE + "/updates")
 
 
-@app.get("/updates")
-@app.get("/futuros")
+@app.get(NAMESPACE + "/updates")
+@app.get(NAMESPACE + "/futuros")
 def feed():
-    futuro = request.path == "/futuros"
+    futuro = request.path == NAMESPACE + "/futuros"
     tipo_registro = "futuro" if futuro else "changelog"
 
     con = db()
@@ -592,7 +595,7 @@ def comentario_html(comentario, filhos):
     """
 
 
-@app.get("/item/<int:id>")
+@app.get(NAMESPACE + "/item/<int:id>")
 def item(id):
     con = db()
 
@@ -725,7 +728,7 @@ def item(id):
     )
 
 
-@app.post("/comentar/<int:id>")
+@app.post(NAMESPACE + "/comentar/<int:id>")
 def comentar(id):
     autor = request.form.get("autor", "").strip()[:80] or "Anônimo"
     email = request.form.get("email", "").strip()[:150] or None
@@ -784,7 +787,7 @@ def comentar(id):
     con.commit()
     con.close()
 
-    return redirect(f"/item/{id}#comentarios")
+    return redirect(f"{NAMESPACE}/item/{id}#comentarios")
 
 
 # ---------------------------------------------------------------------------
@@ -796,7 +799,7 @@ def option(nota, campo, valor, texto):
     return f'<option value="{valor}" {selected}>{texto}</option>'
 
 
-@app.route("/admin", methods=["GET", "POST"])
+@app.route(NAMESPACE + "/admin", methods=["GET", "POST"])
 def admin():
     resposta = admin_auth()
     if resposta:
@@ -814,6 +817,7 @@ def admin():
             request.form.get("descricao", "").strip(),
             request.form.get("status", "proposto"),
             request.form.get("referencia", "").strip() or None,
+            request.form["criado_em"] + " 00:00:00",
         )
 
         if id_nota:
@@ -826,7 +830,8 @@ def admin():
                     titulo = ?,
                     descricao = ?,
                     status = ?,
-                    referencia = ?
+                    referencia = ?,
+                    criado_em = ?
                 WHERE id = ?
                 """,
                 dados + (id_nota,),
@@ -840,16 +845,17 @@ def admin():
                     titulo,
                     descricao,
                     status,
-                    referencia
+                    referencia,
+                    criado_em
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 dados,
             )
 
         con.commit()
         con.close()
-        return redirect("/admin")
+        return redirect(NAMESPACE + "/admin")
 
     editar = request.args.get("editar")
     nota = (
@@ -885,6 +891,7 @@ def admin():
 
     con.close()
 
+    data_atual = nota["criado_em"][:10] if nota else datetime.now().strftime("%Y-%m-%d")
     titulo_atual = esc(nota["titulo"]) if nota else ""
     descricao_atual = esc(nota["descricao"]) if nota else ""
     referencia_atual = (
@@ -903,6 +910,8 @@ def admin():
                 name="id"
                 value="{nota["id"] if nota else ""}"
             >
+
+            <input class="field" type="date" name="criado_em" value="{data_atual}" required>
 
             <select class="field" name="tipo_registro">
                 {option(nota, "tipo_registro", "changelog", "Atualização")}
@@ -1056,7 +1065,7 @@ def admin():
     return pagina(body, "Administração")
 
 
-@app.post("/admin/comentario/<int:id>/responder")
+@app.post(NAMESPACE + "/admin/comentario/<int:id>/responder")
 def admin_reply(id):
     resposta = admin_auth()
     if resposta:
@@ -1092,10 +1101,10 @@ def admin_reply(id):
     con.commit()
     con.close()
 
-    return redirect(f"/admin#mod-{id}")
+    return redirect(f"{NAMESPACE}/admin#mod-{id}")
 
 
-@app.post("/admin/comentario/<int:id>/excluir")
+@app.post(NAMESPACE + "/admin/comentario/<int:id>/excluir")
 def admin_delete_comment(id):
     resposta = admin_auth()
     if resposta:
@@ -1135,10 +1144,10 @@ def admin_delete_comment(id):
     con.commit()
     con.close()
 
-    return redirect("/admin")
+    return redirect(NAMESPACE + "/admin")
 
 
-@app.post("/excluir/<int:id>")
+@app.post(NAMESPACE + "/excluir/<int:id>")
 def excluir(id):
     resposta = admin_auth()
     if resposta:
@@ -1157,7 +1166,7 @@ def excluir(id):
     con.commit()
     con.close()
 
-    return redirect("/admin")
+    return redirect(NAMESPACE + "/admin")
 
 
 # ---------------------------------------------------------------------------
@@ -1173,3 +1182,4 @@ if __name__ == "__main__":
         port=5000,
         debug=False,
     )
+
